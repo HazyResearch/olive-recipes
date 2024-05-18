@@ -23,8 +23,8 @@ from transformers import (
 )
 from transformers.models.llama.modeling_llama import LlamaDecoderLayer
 
-from llama_recipes.configs import fsdp_config as FSDP_CONFIG
-from llama_recipes.configs import train_config as TRAIN_CONFIG
+from llama_recipes.configs import FSDPConfig
+from llama_recipes.configs import TrainConfig
 from llama_recipes.data.concatenator import ConcatDataset
 from llama_recipes.policies import AnyPrecisionAdamW, apply_fsdp_checkpointing
 
@@ -49,7 +49,7 @@ from llama_recipes.utils.train_utils import (
 )
 from accelerate.utils import is_xpu_available
 
-def setup_wandb(train_config, fsdp_config, **kwargs):
+def setup_wandb(train_config):
     try:
         import wandb
     except ImportError:
@@ -57,20 +57,26 @@ def setup_wandb(train_config, fsdp_config, **kwargs):
             "You are trying to use wandb which is not currently installed. "
             "Please install it using pip install wandb"
         )
-    from llama_recipes.configs import wandb_config as WANDB_CONFIG
-    wandb_config = WANDB_CONFIG()
-    update_config(wandb_config, **kwargs)
-    init_dict = dataclasses.asdict(wandb_config)
-    run = wandb.init(**init_dict)
-    run.config.update(train_config)
-    run.config.update(fsdp_config, allow_val_change=True)
+    from llama_recipes.configs import WandBConfig  
+    wandb_config: WandBConfig = train_config.wandb
+    run = wandb.init(
+        project=wandb_config.project,
+        entity=wandb_config.entity,
+        group=wandb_config.group,
+        job_type=wandb_config.job_type,
+        name=wandb_config.name,
+        notes=wandb_config.notes,
+        tags=wandb_config.tags,
+        mode=wandb_config.mode,
+    )
+    run.config.update(train_config.to_dict(), allow_val_change=True)
+    # run.config.update(fsdp_config, allow_val_change=True)
     return run
 
 
-def main(**kwargs):
+def main(train_config: TrainConfig):
     # Update the configuration for the training and sharding process
-    train_config, fsdp_config = TRAIN_CONFIG(), FSDP_CONFIG()
-    update_config((train_config, fsdp_config), **kwargs)
+    fsdp_config = train_config.fsdp
     # Set the seeds for reproducibility
     if is_xpu_available():
         torch.xpu.manual_seed(train_config.seed)
@@ -96,7 +102,7 @@ def main(**kwargs):
 
     if train_config.use_wandb:
         if not train_config.enable_fsdp or rank==0:
-            wandb_run = setup_wandb(train_config, fsdp_config, **kwargs)
+            wandb_run = setup_wandb(train_config)
 
     # Load the pre-trained model and setup its configuration
     use_cache = False if train_config.enable_fsdp else None
@@ -151,7 +157,7 @@ def main(**kwargs):
         model.to(torch.bfloat16)
 
     if train_config.use_peft:
-        peft_config = generate_peft_config(train_config, kwargs)
+        peft_config = generate_peft_config(train_config, {})
         model = get_peft_model(model, peft_config)
         model.print_trainable_parameters()
         if wandb_run:
@@ -198,7 +204,7 @@ def main(**kwargs):
         elif torch.cuda.is_available():
             model.to("cuda")
 
-    dataset_config = generate_dataset_config(train_config, kwargs)
+    dataset_config = train_config.dataset #generate_dataset_config(train_config, {})
 
      # Load and preprocess the dataset for training and validation
     dataset_train = get_preprocessed_dataset(

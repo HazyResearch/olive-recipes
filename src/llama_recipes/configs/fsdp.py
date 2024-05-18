@@ -6,8 +6,9 @@ from dataclasses import dataclass
 from torch.distributed.fsdp import ShardingStrategy
 from torch.distributed.fsdp.fully_sharded_data_parallel import StateDictType
 
-@dataclass
-class fsdp_config:
+from olive.config import BaseConfig
+
+class FSDPConfig(BaseConfig):
     mixed_precision: bool=True
     use_fp16: bool=False
     sharding_strategy: ShardingStrategy = ShardingStrategy.FULL_SHARD # HYBRID_SHARD "Full Shard within a node DDP cross Nodes", SHARD_GRAD_OP "Shard only Gradients and Optimizer States", NO_SHARD "Similar to DDP".
