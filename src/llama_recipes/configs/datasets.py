@@ -7,26 +7,26 @@ from olive.config import BaseConfig
 class DatasetConfig(BaseConfig):
     dataset: str
     
-class SamsumDataset(DatasetConfig):
+class SamsumDatasetConfig(DatasetConfig):
     dataset: str =  "samsum_dataset"
     train_split: str = "train"
     test_split: str = "validation"
     
     
-class GrammarDataset(DatasetConfig):
+class GrammarDatasetConfig(DatasetConfig):
     dataset: str = "grammar_dataset"
     train_split: str = "src/llama_recipes/datasets/grammar_dataset/gtrain_10k.csv" 
     test_split: str = "src/llama_recipes/datasets/grammar_dataset/grammar_validation.csv"
 
     
-class AlpacaDataset(DatasetConfig):
+class AlpacaDatasetConfig(DatasetConfig):
     dataset: str = "alpaca_dataset"
     train_split: str = "train"
     test_split: str = "val"
     data_path: str = "src/llama_recipes/datasets/alpaca_data.json"
     
     
-class CustomDataset(DatasetConfig):
+class CustomDatasetConfig(DatasetConfig):
     dataset: str = "custom_dataset"
     file: str = "examples/custom_dataset.py"
     train_split: str = "train"

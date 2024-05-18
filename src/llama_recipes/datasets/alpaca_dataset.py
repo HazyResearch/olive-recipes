@@ -6,6 +6,7 @@
 import copy
 import json
 
+from datasets import load_dataset
 import torch
 from torch.utils.data import Dataset
 
@@ -25,11 +26,12 @@ PROMPT_DICT = {
 
 class InstructionDataset(Dataset):
     def __init__(self, dataset_config, tokenizer, partition="train"):
-        self.ann = json.load(open(dataset_config.data_path))
+        # self.ann = json.load(open(dataset_config.data_path))
+        self.ann = load_dataset("tatsu-lab/alpaca")["train"].to_list()
         if partition == "train":
-            self.ann = self.ann[200:]
+            self.ann = self.ann[2000:]
         else:
-            self.ann = self.ann[:200]
+            self.ann = self.ann[:2000]
 
         self.tokenizer = tokenizer
 

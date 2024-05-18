@@ -460,9 +460,9 @@ def print_model_size(model, config, rank: int = 0) -> None:
         rank (int, optional): Current process's rank. Defaults to 0.
     """
     if rank == 0:
-        print(f"--> Model {config.model_name}")
+        print(f"--> Model {config.model.model_name}")
         total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-        print(f"\n--> {config.model_name} has {total_params / 1e6} Million params\n")
+        print(f"\n--> {config.model.model_name} has {total_params / 1e6} Million params\n")
 
 
 
@@ -519,7 +519,7 @@ def save_train_params(train_config, fsdp_config, rank):
     + "/"
     + train_config.dist_checkpoint_folder
     + "-"
-    + train_config.model_name
+    + train_config.model.model_name
     )
 
     save_dir = Path.cwd() / folder_name

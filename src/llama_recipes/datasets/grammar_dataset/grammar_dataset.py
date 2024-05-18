@@ -68,6 +68,7 @@ def get_dataset(
 ):
     """cover function for handling loading the working dataset"""
     """dataset loading"""
+    breakpoint()
     if csv_name is None:
         currPath = Path.cwd() / "datasets_grammar" / "grammar_train.csv"
         print(f"Loading dataset {currPath}")

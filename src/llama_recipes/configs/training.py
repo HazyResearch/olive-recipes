@@ -1,9 +1,10 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # This software may be used and distributed according to the terms of the Llama 2 Community License Agreement.
-
+import os 
 from typing import Optional
+
 from olive.config import RunConfig
-from dataclasses import dataclass
+from olive.models.config import ModelConfig
 
 from .fsdp import FSDPConfig
 from .wandb import WandBConfig
@@ -12,7 +13,7 @@ from .datasets import DatasetConfig
 
 class TrainConfig(RunConfig):
 
-    model_name: str
+    model: ModelConfig
     dataset: DatasetConfig
     tokenizer_name: Optional[str]=None
 
@@ -72,5 +73,4 @@ class TrainConfig(RunConfig):
         from llama_recipes.finetuning import main
 
         main(self)
-
 

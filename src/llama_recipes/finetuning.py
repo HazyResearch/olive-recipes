@@ -104,40 +104,10 @@ def main(train_config: TrainConfig):
         if not train_config.enable_fsdp or rank==0:
             wandb_run = setup_wandb(train_config)
 
-    # Load the pre-trained model and setup its configuration
-    use_cache = False if train_config.enable_fsdp else None
-    if train_config.enable_fsdp and train_config.low_cpu_fsdp:
-        """
-        for FSDP, we can save cpu memory by loading pretrained model on rank0 only.
-        this avoids cpu oom when loading large models like llama 70B, in which case
-        model alone would consume 2+TB cpu mem (70 * 4 * 8). This will add some comms
-        overhead and currently requires latest nightly.
-        """
-        if rank == 0:
-            model = LlamaForCausalLM.from_pretrained(
-                train_config.model_name,
-                load_in_8bit=True if train_config.quantization else None,
-                device_map="auto" if train_config.quantization else None,
-                use_cache=use_cache,
-                attn_implementation="sdpa" if train_config.use_fast_kernels else None,
-            )
-        else:
-            llama_config = LlamaConfig.from_pretrained(train_config.model_name)
-            llama_config.use_cache = use_cache
-            with torch.device("meta"):
-                model = LlamaForCausalLM(llama_config)
-
-    else:
-        model = LlamaForCausalLM.from_pretrained(
-            train_config.model_name,
-            load_in_8bit=True if train_config.quantization else None,
-            device_map="auto" if train_config.quantization else None,
-            use_cache=use_cache,
-            attn_implementation="sdpa" if train_config.use_fast_kernels else None,
-        )
+    model = train_config.model.initialize(train_config=train_config)
 
     # Load the tokenizer and add special tokens
-    tokenizer = AutoTokenizer.from_pretrained(train_config.model_name if train_config.tokenizer_name is None else train_config.tokenizer_name)
+    tokenizer = AutoTokenizer.from_pretrained(train_config.model.model_name if train_config.tokenizer_name is None else train_config.tokenizer_name)
     tokenizer.pad_token_id = tokenizer.eos_token_id
 
     # If there is a mismatch between tokenizer vocab size and embedding matrix, 
