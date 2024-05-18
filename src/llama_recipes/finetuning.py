@@ -147,6 +147,11 @@ def main(train_config: TrainConfig):
         mixed_precision_policy, wrapping_policy = get_policies(fsdp_config, rank)
         my_auto_wrapping_policy = fsdp_auto_wrap_policy(model, LlamaDecoderLayer)
 
+        if train_config.use_peft:
+            wrapping_policy = my_auto_wrapping_policy
+        elif hasattr(train_config.model, "auto_wrap_policy"):
+            wrapping_policy = train_config.model.auto_wrap_policy()
+
         device_id = 0
         if is_xpu_available():
             device_id = torch.xpu.current_device()
@@ -155,7 +160,7 @@ def main(train_config: TrainConfig):
 
         model = FSDP(
             model,
-            auto_wrap_policy= my_auto_wrapping_policy if train_config.use_peft else wrapping_policy,
+            auto_wrap_policy=wrapping_policy,
             cpu_offload=CPUOffload(offload_params=True) if fsdp_config.fsdp_cpu_offload else None,
             mixed_precision=mixed_precision_policy if not fsdp_config.pure_bf16 else None,
             sharding_strategy=fsdp_config.sharding_strategy,

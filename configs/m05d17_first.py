@@ -2,7 +2,8 @@ from llama_recipes.configs.training import TrainConfig
 from llama_recipes.configs.fsdp import FSDPConfig
 from llama_recipes.configs.datasets import GrammarDatasetConfig, AlpacaDatasetConfig
 from llama_recipes.configs.models import LLaMaConfig
-from llama_recipes.configs.models import TiedLLaMaConfig
+
+from olive.models.llama_looped.configuration import LoopedLLaMaConfig
 
 
 # torchrun --nnodes 1 --nproc_per_node 8  recipes/finetuning/finetuning.py \
@@ -18,12 +19,18 @@ from llama_recipes.configs.models import TiedLLaMaConfig
 output_dir = "/home/eyuboglu@stanford.edu/code/olive/olive-recipes/outputs"
 
 config = TrainConfig(
-    model=TiedLLaMaConfig(
+    model=LoopedLLaMaConfig(
         model_name="meta-llama/Meta-Llama-3-8B-Instruct",
-        tied_layers=[(16, 17)]
+        # tied_layers=[(12, 13)]
+        # tied_layers=[]
     ),
+    # model=LLaMaConfig(
+    #     model_name="meta-llama/Meta-Llama-3-8B-Instruct",
+    # ),
     dataset=AlpacaDatasetConfig(),
-    fsdp=FSDPConfig(),
+    fsdp=FSDPConfig(
+        fsdp_activation_checkpointing=True
+    ),
     enable_fsdp=True,
     pure_bf16=True,
     use_fast_kernels=True,

@@ -29,7 +29,7 @@ class InstructionDataset(Dataset):
         # self.ann = json.load(open(dataset_config.data_path))
         self.ann = load_dataset("tatsu-lab/alpaca")["train"].to_list()
         if partition == "train":
-            self.ann = self.ann[2000:]
+            self.ann = self.ann[2000:4000]
         else:
             self.ann = self.ann[:2000]
 

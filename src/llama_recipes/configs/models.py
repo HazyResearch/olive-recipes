@@ -104,8 +104,6 @@ class TiedLLaMaConfig(ModelConfig):
         if self.tied_layers is not None:
             for src, dst in self.tied_layers:
                 print(f"Swapping layer {src} with layer {dst}")
-                model.layers[dst].mlp = model.layers[src].mlp
+                model.model.layers[dst] = model.model.layers[src]
 
         return model
-
-
