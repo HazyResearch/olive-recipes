@@ -1,6 +1,6 @@
 from llama_recipes.configs.training import TrainConfig
 from llama_recipes.configs.fsdp import FSDPConfig
-from llama_recipes.configs.datasets import GrammarDatasetConfig, AlpacaDatasetConfig
+from llama_recipes.datasets.pretraining_dataset import PretrainingDatasetConfig
 from llama_recipes.configs.models import LLaMaConfig
 
 from olive.models.llama_looped.configuration import LoopedLLaMaConfig
@@ -27,7 +27,13 @@ config = TrainConfig(
     # model=LLaMaConfig(
     #     model_name="meta-llama/Meta-Llama-3-8B-Instruct",
     # ),
-    dataset=AlpacaDatasetConfig(),
+    dataset=PretrainingDatasetConfig(
+        path="/var/cr05_data/sabri/data/slim-pj/train/chunk1",
+        # cache_dir="/var/cr05_data/sabri/data/slim-pj/train/chunk1_tokenized_mmap/",
+        num_tokens=int(1e8),
+        seq_len=1024,
+        drop_last=True
+    ),
     fsdp=FSDPConfig(
         fsdp_activation_checkpointing=True
     ),

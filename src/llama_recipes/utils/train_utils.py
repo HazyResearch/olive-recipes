@@ -20,7 +20,7 @@ from tqdm import tqdm
 from transformers import LlamaTokenizer
 import json
 
-
+from llama_recipes.configs.training import TrainConfig
 from llama_recipes.model_checkpointing import save_model_checkpoint, save_model_and_optimizer_sharded, save_optimizer_checkpoint
 from llama_recipes.policies import fpSixteen,bfSixteen, get_llama_wrapper
 from llama_recipes.utils.memory_utils import MemoryTrace
@@ -68,7 +68,20 @@ def profile(cfg, local_rank=None):
         yield None
 
 
-def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_scheduler, gradient_accumulation_steps, train_config, fsdp_config=None, local_rank=None, rank=None, wandb_run=None):
+def train(
+    model, 
+    train_dataloader,
+    eval_dataloader, 
+    tokenizer, 
+    optimizer, 
+    lr_scheduler, 
+    gradient_accumulation_steps, 
+    train_config: TrainConfig, 
+    fsdp_config=None, 
+    local_rank=None, 
+    rank=None, 
+    wandb_run=None
+):
     """
     Trains the model on the given dataloader
 
