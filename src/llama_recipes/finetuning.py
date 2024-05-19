@@ -135,7 +135,7 @@ def main(train_config: TrainConfig):
 
 
     hsdp_device_mesh = None
-    if fsdp_config.hsdp and fsdp_config.sharding_strategy == ShardingStrategy.HYBRID_SHARD:
+    if fsdp_config.hsdp and fsdp_config.sharding_strategy == "HYBRID_SHARD":
         hsdp_device_mesh = hsdp_device_mesh(replica_group_size=fsdp_config.replica_group_size, sharding_group_size=fsdp_config.sharding_group_size)
         print("HSDP device mesh is ready")
 
@@ -158,12 +158,13 @@ def main(train_config: TrainConfig):
         elif torch.cuda.is_available():
             device_id = torch.cuda.current_device()
 
+        sharding_strategy = getattr(ShardingStrategy, fsdp_config.sharding_strategy)
         model = FSDP(
             model,
             auto_wrap_policy=wrapping_policy,
             cpu_offload=CPUOffload(offload_params=True) if fsdp_config.fsdp_cpu_offload else None,
             mixed_precision=mixed_precision_policy if not fsdp_config.pure_bf16 else None,
-            sharding_strategy=fsdp_config.sharding_strategy,
+            sharding_strategy=sharding_strategy,
             device_mesh=hsdp_device_mesh,
             device_id=device_id,
             limit_all_gathers=True,

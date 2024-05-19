@@ -130,19 +130,35 @@ def train(
     best_val_loss = float("inf")
     total_train_steps = 0
     max_steps_reached = False  # Flag to indicate max training steps reached
+
+    dl_iterator = iter(train_dataloader)
+    validate_every_n_steps = train_config.validate_every_n_steps
+
     # Start the training loop
-    for epoch in range(train_config.num_epochs):
+    total_length = len(train_dataloader) * train_config.num_epochs //gradient_accumulation_steps
+    pbar = tqdm(colour="blue", desc=f"Training", total=total_length, dynamic_ncols=True)
+    epoch = 0
+    for _ in range(total_length // validate_every_n_steps + 1):
         # stop when the maximum number of training steps is reached
-        if max_steps_reached:
+        if max_steps_reached or epoch >= train_config.num_epochs:
             break
         epoch_start_time = time.perf_counter()
         with MemoryTrace() as memtrace:  # track the memory usage
             model.train()
             total_loss = 0.0
-            total_length = len(train_dataloader)//gradient_accumulation_steps
-            pbar = tqdm(colour="blue", desc=f"Training Epoch: {epoch+1}", total=total_length, dynamic_ncols=True)
             with profile(train_config,local_rank) as profile_context:
-                for step, batch in enumerate(train_dataloader):
+                for step in range(validate_every_n_steps):
+                    # get the next batch from the dataloader, reloading the iterator 
+                    # if necessary
+                    try:
+                        batch = next(dl_iterator)
+                    except StopIteration:
+                        epoch += 1
+                        if epoch >= train_config.num_epochs:
+                            break
+                        dl_iterator = iter(train_dataloader)
+                        batch = next(dl_iterator)
+                    
                     total_train_steps += 1
                     # stop when the maximum number of training steps is reached
                     if train_config.max_train_step > 0 and total_train_steps > train_config.max_train_step:
@@ -208,11 +224,10 @@ def train(
                                 'train/loss': loss.detach().float(),
                             })
 
-                    pbar.set_description(f"Training Epoch: {epoch+1}/{train_config.num_epochs}, step {step}/{len(train_dataloader)} completed (loss: {loss.detach().float()})")
+                    # pbar.set_description(f"Training Epoch: {epoch+1}/{train_config.num_epochs}, step {step}/{len(train_dataloader)} completed (loss: {loss.detach().float()})")
 
                     if train_config.save_metrics:
                         save_to_json(metrics_filename, train_step_loss, train_loss, train_step_perplexity, train_prep, val_step_loss, val_loss, val_step_perplexity, val_prep)
-                pbar.close()
 
         epoch_end_time = time.perf_counter()-epoch_start_time
         epoch_times.append(epoch_end_time)
@@ -258,12 +273,12 @@ def train(
                         print(f"PEFT modules are saved in {train_config.output_dir} directory")
 
                 else:
-                    if not train_config.use_peft and fsdp_config.checkpoint_type == StateDictType.FULL_STATE_DICT:
+                    if not train_config.use_peft and fsdp_config.checkpoint_type == "FULL_STATE_DICT":
 
                         save_model_checkpoint(
                             model, optimizer, rank, train_config, epoch=epoch
                         )
-                    elif not train_config.use_peft and fsdp_config.checkpoint_type == StateDictType.SHARDED_STATE_DICT:
+                    elif not train_config.use_peft and fsdp_config.checkpoint_type == "SHARDED_STATE_DICT":
                         print(" Saving the FSDP model checkpoints using SHARDED_STATE_DICT")
                         print("=====================================================")
 
@@ -273,6 +288,7 @@ def train(
                             print(" Saving the FSDP model checkpoints and optimizer using SHARDED_STATE_DICT")
                             print("=====================================================")
 
+                    # SE (05/19): I think this is a bug in their code, we shouldn't be going into this if we're saving sharded
                     if not train_config.use_peft and  train_config.save_optimizer:
                         save_optimizer_checkpoint(
                             model, optimizer, rank, train_config, epoch=epoch
@@ -292,16 +308,17 @@ def train(
                     print(f"best eval loss on epoch {epoch+1} is {best_val_loss}")
             val_loss.append(float(best_val_loss))
             val_prep.append(float(eval_ppl))
-        if train_config.enable_fsdp:
-            if rank==0:
-                print(f"Epoch {epoch+1}: train_perplexity={train_perplexity:.4f}, train_epoch_loss={train_epoch_loss:.4f}, epoch time {epoch_end_time}s")
-        else:
-            print(f"Epoch {epoch+1}: train_perplexity={train_perplexity:.4f}, train_epoch_loss={train_epoch_loss:.4f}, epoch time {epoch_end_time}s")
+        # if train_config.enable_fsdp:
+        #     if rank==0:
+        #         print(f"Epoch {epoch+1}: train_perplexity={train_perplexity:.4f}, train_epoch_loss={train_epoch_loss:.4f}, epoch time {epoch_end_time}s")
+        # else:
+        #     print(f"Epoch {epoch+1}: train_perplexity={train_perplexity:.4f}, train_epoch_loss={train_epoch_loss:.4f}, epoch time {epoch_end_time}s")
 
         # Saving the results every epoch to plot later
         if train_config.save_metrics:
             save_to_json(metrics_filename, train_step_loss, train_loss, train_step_perplexity, train_prep, val_step_loss, val_loss, val_step_perplexity, val_prep)
 
+    pbar.close()
     avg_epoch_time = sum(epoch_times)/ len(epoch_times)
     avg_checkpoint_time = sum(checkpoint_times)/ len(checkpoint_times) if len(checkpoint_times) > 0 else 0
     avg_train_prep = sum(train_prep)/len(train_prep)

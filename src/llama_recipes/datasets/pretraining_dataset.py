@@ -25,7 +25,8 @@ class PretrainingDatasetConfig(DatasetConfig):
     cache_dir: Optional[str] = None
 
     tokenizer: str = "meta-llama/Meta-Llama-3-8B-Instruct"
-    num_tokens: int = int(1e8)
+    num_tokens: int = int(1e8)  # includes both train and test
+    num_test_tokens: int = int(1e5)
     seq_len: int = 1024
     seed: int = 42
     drop_last: bool=True
@@ -36,7 +37,7 @@ class PretrainingDatasetConfig(DatasetConfig):
         config = self.to_dict()
         
         # these do not affect teh cached data so are excluded from the hash
-        for x in ["drop_last", "cache_dir", "seq_len"]:
+        for x in ["drop_last", "cache_dir", "seq_len", "num_test_tokens"]:
             config.pop(x, None)
 
         return os.path.join(
@@ -45,11 +46,11 @@ class PretrainingDatasetConfig(DatasetConfig):
         )
 
     def instantiate(self, tokenizer, split: str = "train"):
-        return PretrainingDataset(self)
+        return PretrainingDataset(self, split=split)
 
 class PretrainingDataset(torch.utils.data.Dataset):
 
-    def __init__(self, config: PretrainingDatasetConfig):
+    def __init__(self, config: PretrainingDatasetConfig, split: str = "train"):
         """tokens should be a numpy array
         """
         self.config = config
@@ -57,6 +58,13 @@ class PretrainingDataset(torch.utils.data.Dataset):
         if not os.path.exists(filename):
             raise FileNotFoundError(f"File {filename} does not exist. Please run 'tokenize_data' first.")
         tokens = np.memmap(filename, mode="r", dtype=np.int32)
+        if split == "train":
+            tokens = tokens[:-config.num_test_tokens]
+        elif split == "test":
+            tokens = tokens[-config.num_test_tokens:]
+        else:
+            raise ValueError(f"Invalid split: {split}")
+        
         ntokens = len(tokens)
         if config.drop_last:
             ntokens = ((ntokens - 1) // config.seq_len) * config.seq_len + 1

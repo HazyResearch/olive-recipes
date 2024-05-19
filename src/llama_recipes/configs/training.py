@@ -12,6 +12,7 @@ from .datasets import DatasetConfig
 
 
 class TrainConfig(RunConfig):
+    name: str="default"
 
     model: ModelConfig
     dataset: DatasetConfig
@@ -34,6 +35,7 @@ class TrainConfig(RunConfig):
     
     num_epochs: int=3
     max_train_step: int=0
+    validate_every_n_steps: int = 50
     max_eval_step: int=0
 
     lr: float=1e-4

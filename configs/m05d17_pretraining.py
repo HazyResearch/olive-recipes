@@ -1,3 +1,6 @@
+
+from torch.distributed.fsdp.fully_sharded_data_parallel import StateDictType
+
 from llama_recipes.configs.training import TrainConfig
 from llama_recipes.configs.fsdp import FSDPConfig
 from llama_recipes.datasets.pretraining_dataset import PretrainingDatasetConfig
@@ -19,6 +22,7 @@ from olive.models.llama_looped.configuration import LoopedLLaMaConfig
 output_dir = "/home/eyuboglu@stanford.edu/code/olive/olive-recipes/outputs"
 
 config = TrainConfig(
+    name="m05d19-pretrain-looped",
     model=LoopedLLaMaConfig(
         model_name="meta-llama/Meta-Llama-3-8B-Instruct",
         looped_blocks=[[16,17,18,19]],
@@ -32,11 +36,13 @@ config = TrainConfig(
         path="/var/cr05_data/sabri/data/slim-pj/train/chunk1",
         # cache_dir="/var/cr05_data/sabri/data/slim-pj/train/chunk1_tokenized_mmap/",
         num_tokens=int(1e8),
+        num_test_tokens=int(1e5),
         seq_len=1024,
         drop_last=True
     ),
     fsdp=FSDPConfig(
-        fsdp_activation_checkpointing=True
+        fsdp_activation_checkpointing=True,
+        checkpoint_type="FULL_STATE_DICT",
     ),
     enable_fsdp=True,
     pure_bf16=True,
@@ -45,9 +51,10 @@ config = TrainConfig(
     use_wandb=True,
     dist_checkpoint_root_folder="/var/cr05_data/sabri_data/olive-recipes/checkpoints",
     dist_checkpoint_folder="fine-tuned",
-    save_model=False,
-    num_epochs=50,
-    run_validation=False,
+    save_model=True,
+    num_epochs=1,
+    validate_every_n_steps=2,
+    run_validation=True,
     batching_strategy="none"
 )
 
