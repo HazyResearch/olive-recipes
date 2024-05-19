@@ -102,6 +102,20 @@ def get_dataloader_kwargs(train_config, dataset, tokenizer, mode):
             kwargs["batch_size"] = batch_size
             kwargs["drop_last"] = True
             kwargs["collate_fn"] = default_data_collator
+        elif train_config.batching_strategy == "none":
+            if train_config.enable_fsdp:
+                kwargs["sampler"] = DistributedSampler(
+                   dataset,
+                    rank=dist.get_rank(),
+                    num_replicas=dist.get_world_size(),
+                    shuffle=mode=="train",
+                    drop_last=True,
+                )
+            
+            kwargs["batch_size"] = batch_size
+            kwargs["drop_last"] = True
+            kwargs["collate_fn"] = default_data_collator
+
         else:
             raise ValueError(f"Unknown batching strategy: {train_config.batching_strategy}")
 

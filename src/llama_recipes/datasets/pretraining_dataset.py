@@ -44,6 +44,9 @@ class PretrainingDatasetConfig(DatasetConfig):
             hashlib.sha256(str(config).encode()).hexdigest()
         )
 
+    def instantiate(self, tokenizer):
+        return PretrainingDataset(self)
+
 class PretrainingDataset(torch.utils.data.Dataset):
 
     def __init__(self, config: PretrainingDatasetConfig):
@@ -51,6 +54,8 @@ class PretrainingDataset(torch.utils.data.Dataset):
         """
         self.config = config
         filename = os.path.join(config.dataset_dir(), "data.bin")
+        if not os.path.exists(filename):
+            raise FileNotFoundError(f"File {filename} does not exist. Please run 'tokenize_data' first.")
         tokens = np.memmap(filename, mode="r", dtype=np.int32)
         ntokens = len(tokens)
         if config.drop_last:
@@ -67,8 +72,12 @@ class PretrainingDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         start_idx = idx * self.config.seq_len
         seq_len = min(self.config.seq_len, self.ntokens - 1 - start_idx)
-        data = torch.as_tensor(self.tokens[start_idx:(start_idx + seq_len + 1)].astype(np.int64))
-        return data[:-1], data[1:].clone()
+        data = list(self.tokens[start_idx:(start_idx + seq_len + 1)].astype(np.int64))
+        return {
+            "input_ids": data[:-1],
+            "labels": data[1:],
+            "attention_mask": [1] * len(data[:-1]),
+        }
 
 
 def tokenize_data(

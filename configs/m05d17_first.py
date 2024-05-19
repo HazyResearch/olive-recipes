@@ -30,7 +30,7 @@ config = TrainConfig(
     dataset=PretrainingDatasetConfig(
         path="/var/cr05_data/sabri/data/slim-pj/train/chunk1",
         # cache_dir="/var/cr05_data/sabri/data/slim-pj/train/chunk1_tokenized_mmap/",
-        num_tokens=int(1e8),
+        num_tokens=int(1e9),
         seq_len=1024,
         drop_last=True
     ),
