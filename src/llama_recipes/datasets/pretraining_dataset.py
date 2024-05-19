@@ -44,7 +44,7 @@ class PretrainingDatasetConfig(DatasetConfig):
             hashlib.sha256(str(config).encode()).hexdigest()
         )
 
-    def instantiate(self, tokenizer):
+    def instantiate(self, tokenizer, split: str = "train"):
         return PretrainingDataset(self)
 
 class PretrainingDataset(torch.utils.data.Dataset):
@@ -72,11 +72,16 @@ class PretrainingDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         start_idx = idx * self.config.seq_len
         seq_len = min(self.config.seq_len, self.ntokens - 1 - start_idx)
-        data = list(self.tokens[start_idx:(start_idx + seq_len + 1)].astype(np.int64))
+        data = list(self.tokens[start_idx:(start_idx + seq_len)].astype(np.int64))
+
+        # SE(05/19): The Llama model performs the shifting of the input_ids and the 
+        # labels in the loss function, so we just return the same thing for the inputs
+        # and the loss here 
+        # https://github.com/huggingface/transformers/blob/15c74a28294fe9082b81b24efe58df16fed79a9e/src/transformers/models/llama/modeling_llama.py#L1220
         return {
-            "input_ids": data[:-1],
-            "labels": data[1:],
-            "attention_mask": [1] * len(data[:-1]),
+            "input_ids": data,
+            "labels": data,
+            "attention_mask": [True] * seq_len,
         }
 
 

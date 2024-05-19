@@ -162,6 +162,7 @@ def train(
                                 batch[key] = batch[key].to('xpu:0')
                             else:
                                 batch[key] = batch[key].to('cuda:0')
+
                     with autocast():
                         loss = model(**batch).loss
                     loss = loss / gradient_accumulation_steps

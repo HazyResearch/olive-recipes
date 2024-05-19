@@ -4,8 +4,20 @@
 from dataclasses import dataclass
 from olive.config import BaseConfig
 
+
+
 class DatasetConfig(BaseConfig):
     dataset: str
+
+    def instantiate(self, tokenizer, split: str="train"):
+        from llama_recipes.utils.dataset_utils import get_preprocessed_dataset
+        ds = get_preprocessed_dataset(
+            tokenizer,
+            self,
+            split=split,
+        )
+        return ds
+
     
 class SamsumDatasetConfig(DatasetConfig):
     dataset: str =  "samsum_dataset"

@@ -187,7 +187,7 @@ def main(train_config: TrainConfig):
     #     dataset_config,
     #     split="train",
     # )
-    dataset_train = dataset_config.instantiate(tokenizer)
+    dataset_train = dataset_config.instantiate(tokenizer, split="train")
 
     if not train_config.enable_fsdp or rank == 0:
         print(f"--> Training Set Length = {len(dataset_train)}")
@@ -207,9 +207,8 @@ def main(train_config: TrainConfig):
 
     eval_dataloader = None
     if train_config.run_validation:
-        dataset_val = get_preprocessed_dataset(
+        dataset_val = dataset_config.instantiate(
             tokenizer,
-            dataset_config,
             split="test",
         )
         if not train_config.enable_fsdp or rank == 0:

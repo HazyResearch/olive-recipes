@@ -19,14 +19,14 @@ from olive.models.llama_looped.configuration import LoopedLLaMaConfig
 output_dir = "/home/eyuboglu@stanford.edu/code/olive/olive-recipes/outputs"
 
 config = TrainConfig(
-    model=LoopedLLaMaConfig(
-        model_name="meta-llama/Meta-Llama-3-8B-Instruct",
-        # tied_layers=[(12, 13)]
-        # tied_layers=[]
-    ),
-    # model=LLaMaConfig(
+    # model=LoopedLLaMaConfig(
     #     model_name="meta-llama/Meta-Llama-3-8B-Instruct",
+    #     # tied_layers=[(12, 13)]
+    #     # tied_layers=[]
     # ),
+    model=LLaMaConfig(
+        model_name="meta-llama/Meta-Llama-3-8B",
+    ),
     dataset=PretrainingDatasetConfig(
         path="/var/cr05_data/sabri/data/slim-pj/train/chunk1",
         # cache_dir="/var/cr05_data/sabri/data/slim-pj/train/chunk1_tokenized_mmap/",
