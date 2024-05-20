@@ -104,7 +104,7 @@ def main(train_config: TrainConfig):
         if not train_config.enable_fsdp or rank==0:
             wandb_run = setup_wandb(train_config)
 
-    model = train_config.model.initialize(train_config=train_config)
+    model = train_config.model.instantiate(train_config=train_config)
 
     # Load the tokenizer and add special tokens
     tokenizer = AutoTokenizer.from_pretrained(train_config.model.model_name if train_config.tokenizer_name is None else train_config.tokenizer_name)

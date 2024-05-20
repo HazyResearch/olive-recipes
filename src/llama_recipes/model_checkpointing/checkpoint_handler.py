@@ -163,19 +163,11 @@ def load_model_checkpoint(model, rank, cfg):
     # full_state_dict_model_path = (
         # Path.cwd() / cfg.checkpoint_folder / cfg.checkpoint_model_filename
     # )
-    full_state_dict_model_path = get_save_dir(cfg)
-    # is it present...
-    if not full_state_dict_model_path.is_file():
-        print(
-            f"model checkpoint {full_state_dict_model_path} not present. Returning..."
-        )
-        return
-
+    full_state_dict_model_path = os.path.join(get_save_dir(cfg), "model.pt")
 
     model_checkpoint = torch.load(full_state_dict_model_path)
     # integrate into loaded model
     model.load_state_dict(model_checkpoint)
-
     
     print(f"model checkpoint loaded to rank0 cpu")
 

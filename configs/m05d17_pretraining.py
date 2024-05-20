@@ -26,8 +26,6 @@ config = TrainConfig(
     model=LoopedLLaMaConfig(
         model_name="meta-llama/Meta-Llama-3-8B-Instruct",
         looped_blocks=[[16,17,18,19]],
-        # tied_layers=[(12, 13)]
-        # tied_layers=[]
     ),
     # model=LLaMaConfig(
     #     model_name="meta-llama/Meta-Llama-3-8B",
@@ -53,7 +51,7 @@ config = TrainConfig(
     dist_checkpoint_folder="fine-tuned",
     save_model=True,
     num_epochs=1,
-    validate_every_n_steps=2,
+    validate_every_n_steps=25,
     run_validation=True,
     batching_strategy="none"
 )
