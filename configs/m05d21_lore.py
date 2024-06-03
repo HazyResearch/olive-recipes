@@ -1,4 +1,5 @@
 
+import numpy as np
 from torch.distributed.fsdp.fully_sharded_data_parallel import StateDictType
 
 from llama_recipes.configs.training import TrainConfig
@@ -21,15 +22,19 @@ from olive.models.llama_looped.configuration import LoopedLLaMaConfig
 
 output_dir = "/home/eyuboglu@stanford.edu/code/olive/olive-recipes/outputs"
 
+start_layer = 24
+end_layer = 28
+prune = False
+
 config = TrainConfig(
-    name="m05d19-pretrain",
+    name=f"m05d20-varying_depth_{'prune' if prune else 'loop'}_s{start_layer}-e{end_layer}",
     model=LoopedLLaMaConfig(
         model_name="meta-llama/Meta-Llama-3-8B-Instruct",
-        looped_blocks=[],
+        # looped_blocks=[[16,17,18,19]],
+        layer_order=list(range(0, start_layer)) + [start_layer] * 4 + list(range(end_layer, 32)),
+        use_lore=True,
+        lore_rank=512,
     ),
-    # model=LLaMaConfig(
-    #     model_name="meta-llama/Meta-Llama-3-8B",
-    # ),
     dataset=PretrainingDatasetConfig(
         path="/var/cr05_data/sabri/data/slim-pj/train/chunk1",
         # cache_dir="/var/cr05_data/sabri/data/slim-pj/train/chunk1_tokenized_mmap/",
@@ -52,8 +57,11 @@ config = TrainConfig(
     save_model=True,
     num_epochs=1,
     validate_every_n_steps=25,
+    validate_first=True,
     run_validation=True,
-    batching_strategy="none"
+    batching_strategy="none",
+    batch_size_training=8,
+    val_batch_size=8
 )
 
 configs = [config]

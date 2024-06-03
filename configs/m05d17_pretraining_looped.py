@@ -22,10 +22,11 @@ from olive.models.llama_looped.configuration import LoopedLLaMaConfig
 output_dir = "/home/eyuboglu@stanford.edu/code/olive/olive-recipes/outputs"
 
 config = TrainConfig(
-    name="m05d19-pretrain",
+    name="m05d19-pretrain-looped",
     model=LoopedLLaMaConfig(
         model_name="meta-llama/Meta-Llama-3-8B-Instruct",
-        looped_blocks=[],
+        looped_blocks=[[16,17,18,19]],
+        prune=True
     ),
     # model=LLaMaConfig(
     #     model_name="meta-llama/Meta-Llama-3-8B",
@@ -52,8 +53,11 @@ config = TrainConfig(
     save_model=True,
     num_epochs=1,
     validate_every_n_steps=25,
+    validate_first=True,
     run_validation=True,
-    batching_strategy="none"
+    batching_strategy="none",
+    batch_size_training=8,
+    val_batch_size=8
 )
 
 configs = [config]

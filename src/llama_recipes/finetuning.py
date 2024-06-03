@@ -64,7 +64,7 @@ def setup_wandb(train_config):
         entity=wandb_config.entity,
         group=wandb_config.group,
         job_type=wandb_config.job_type,
-        name=wandb_config.name,
+        name=train_config.name,
         notes=wandb_config.notes,
         tags=wandb_config.tags,
         mode=wandb_config.mode,
@@ -179,6 +179,9 @@ def main(train_config: TrainConfig):
             model.to("xpu:0")
         elif torch.cuda.is_available():
             model.to("cuda")
+
+    if not train_config.enable_fsdp or rank == 0:
+        print(model)
 
     dataset_config = train_config.dataset #generate_dataset_config(train_config, {})
 

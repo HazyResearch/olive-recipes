@@ -36,6 +36,7 @@ class TrainConfig(RunConfig):
     num_epochs: int=3
     max_train_step: int=0
     validate_every_n_steps: int = 50
+    validate_first: bool = True
     max_eval_step: int=0
 
     lr: float=1e-4

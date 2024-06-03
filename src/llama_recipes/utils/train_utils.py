@@ -139,7 +139,9 @@ def train(
     pbar = tqdm(colour="blue", desc=f"Training", total=total_length, dynamic_ncols=True)
     epoch = 0
     for _ in range(total_length // validate_every_n_steps + 1):
-        # stop when the maximum number of training steps is reached
+        if train_config.validate_first:
+            evaluation(model, train_config, eval_dataloader, local_rank, tokenizer, wandb_run)
+
         if max_steps_reached or epoch >= train_config.num_epochs:
             break
         epoch_start_time = time.perf_counter()
@@ -362,7 +364,10 @@ def evaluation(model,train_config, eval_dataloader, local_rank, tokenizer, wandb
     eval_preds = []
     val_step_loss = []
     val_step_perplexity = []
-    eval_loss = 0.0  # Initialize evaluation loss
+
+    # SE (05/20): I added the torch.tensor to avoid a bug in the case where the 
+    # eval_dataloader is empty and then the torch all reduce call fails
+    eval_loss = torch.tensor(0.0, device=model.device)  # Initialize evaluation loss
     total_eval_steps = 0
     with MemoryTrace() as memtrace:
         for step, batch in enumerate(tqdm(eval_dataloader,colour="green", desc="evaluating Epoch", dynamic_ncols=True)):
